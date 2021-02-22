@@ -16,6 +16,12 @@ mqtt_door_lock_topic = config("MQTT_DOOR_LOCK_TOPIC")
 # connect to redis
 redis_client = redis.Redis(host=redis_host, port=6379, db=0, password=redis_password)
 
+# define mqtt client
+client = mqtt.Client()
+
+def on_publish(client, userdata, result):
+  logging.info("Data published to topic {topic} with result code {rc}".format(topic=mqtt_door_lock_topic, rc=str(result)))
+
 def on_connect(client, userdata, flags, rc):
   logging.info("Connected to MQTT broker, subscribing to {topic}...".format(topic=mqtt_door_hid_topic))
   client.subscribe(mqtt_door_hid_topic)
@@ -38,6 +44,7 @@ def process_message(payload):
     result = result.decode("utf-8")
     if result == "yes":
       logging.info("Door access is allowed")
+      client.publish(mqtt_door_lock_topic, "open")
     else:
       logging.info("Door access is not allowed")
   else:
@@ -45,9 +52,9 @@ def process_message(payload):
 
 # main method to run programme
 def run():
-  client = mqtt.Client()
   client.on_connect = on_connect
   client.on_message = on_message
+  client.on_publish = on_publish
   client.connect(mqtt_broker_host)
   client.loop_forever()
 
