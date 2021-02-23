@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] (%(
 redis_host = config("REDIS_HOST")
 redis_password = config("REDIS_PASSWORD")
 mqtt_broker_host = config("MQTT_BROKER_HOST")
-mqtt_door_hid_topic = config("MQTT_DOOR_STATUS_TOPIC")
-mqtt_door_lock_topic = config("MQTT_DOOR_LOCK_TOPIC")
+mqtt_hidreader_topic_pattern = config("MQTT_HIDREADER_TOPIC_PATTERN")
+mqtt_door_topic_pattern = config("MQTT_DOOR_TOPIC_PATTERN")
 
 # connect to redis
 redis_client = redis.Redis(host=redis_host, port=6379, db=0, password=redis_password)
@@ -20,11 +20,11 @@ redis_client = redis.Redis(host=redis_host, port=6379, db=0, password=redis_pass
 client = mqtt.Client()
 
 def on_publish(client, userdata, result):
-  logging.info("Data published to topic {topic} with result code {rc}".format(topic=mqtt_door_lock_topic, rc=str(result)))
+  logging.info("Data published to topic with result code {rc}".format(rc=str(result)))
 
 def on_connect(client, userdata, flags, rc):
-  logging.info("Connected to MQTT broker, subscribing to {topic}...".format(topic=mqtt_door_hid_topic))
-  client.subscribe(mqtt_door_hid_topic)
+  logging.info("Connected to MQTT broker, subscribing to {topic}...".format(topic=mqtt_hidreader_topic_pattern))
+  client.subscribe(mqtt_hidreader_topic_pattern)
 
 def on_message(client, userdata, msg):
   logging.info("Got a message from {topic}".format(topic=msg.topic))
@@ -44,7 +44,7 @@ def process_message(payload):
     result = result.decode("utf-8")
     if result == "yes":
       logging.info("Door access is allowed")
-      client.publish(mqtt_door_lock_topic, "open")
+      client.publish(mqtt_door_topic_pattern.format(door=payload["door_name"]), "open")
     else:
       logging.info("Door access is not allowed")
   else:
