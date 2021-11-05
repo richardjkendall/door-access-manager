@@ -34,4 +34,4 @@ jobs:
         run: echo ${{secrets.DAMBUILD_DOCKER_PASSWORD}} | docker login docker.richardjameskendall.com -u dambuild --password-stdin
       
       - name: Build image
-        run: docker buildx build --platform linux/arm64 --output "type=image,push=true" --file Dockerfile -t docker.richardjameskendall.com/door-access-manager .
+        run: docker buildx build --platform linux/arm64,linux/amd64 --output "type=image,push=true" --file Dockerfile -t docker.richardjameskendall.com/door-access-manager .
